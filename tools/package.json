@@ -1,0 +1,12 @@
+{
+  "name": "hyrox-coach-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "mock": "node mock-server/server.mjs",
+    "smoke": "node smoke-test.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1"
+  }
+}

@@ -1,0 +1,856 @@
+{
+  "title": "Mock-Plan",
+  "summary": "Beispielplan aus dem Mock-Server. Das echte Backend erzeugt den Plan per KI.",
+  "focus": {
+    "primary": "Stationen",
+    "secondary": [],
+    "rationale": "Mock"
+  },
+  "startDate": "2026-11-02",
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "theme": "Woche 1 (Mock)",
+      "days": [
+        {
+          "date": "2026-11-02",
+          "dayType": "strength",
+          "title": "Kraft Unterkörper",
+          "intent": "Mock-Plan (keine KI)",
+          "durationMin": 60,
+          "variants": [
+            {
+              "location": "gym",
+              "equipment": [
+                "barbell",
+                "sled",
+                "skierg"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Kraft",
+                  "type": "main",
+                  "format": "straight_sets",
+                  "exercises": [
+                    {
+                      "name": "Kniebeuge",
+                      "sets": 4,
+                      "reps": 6,
+                      "loadKg": 70,
+                      "restSec": 120,
+                      "equipment": [
+                        "barbell"
+                      ]
+                    },
+                    {
+                      "name": "Rumänisches Kreuzheben",
+                      "sets": 3,
+                      "reps": 8,
+                      "loadKg": 60,
+                      "restSec": 120
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "location": "home",
+              "equipment": [
+                "kettlebell"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Kraft",
+                  "type": "main",
+                  "format": "straight_sets",
+                  "exercises": [
+                    {
+                      "name": "Goblet Squat",
+                      "sets": 4,
+                      "reps": 10,
+                      "loadKg": 20,
+                      "restSec": 90,
+                      "equipment": [
+                        "kettlebell"
+                      ]
+                    },
+                    {
+                      "name": "Ausfallschritte",
+                      "sets": 3,
+                      "reps": 12,
+                      "loadKg": 12,
+                      "restSec": 60
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2026-11-03",
+          "dayType": "rest",
+          "title": "Ruhetag",
+          "durationMin": 0,
+          "variants": []
+        },
+        {
+          "date": "2026-11-04",
+          "dayType": "run",
+          "title": "Laufintervalle",
+          "intent": "Mock-Plan (keine KI)",
+          "durationMin": 60,
+          "variants": [
+            {
+              "location": "gym",
+              "equipment": [
+                "barbell",
+                "sled",
+                "skierg"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Intervalle",
+                  "type": "main",
+                  "format": "intervals",
+                  "exercises": [
+                    {
+                      "name": "1-km-Intervall",
+                      "station": "run",
+                      "sets": 5,
+                      "distanceM": 1000,
+                      "targetPace": "5:15/km",
+                      "restSec": 90,
+                      "rpeTarget": 7
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2026-11-05",
+          "dayType": "rest",
+          "title": "Ruhetag",
+          "durationMin": 0,
+          "variants": []
+        },
+        {
+          "date": "2026-11-06",
+          "dayType": "hyrox_sim",
+          "title": "Hyrox-Simulation",
+          "intent": "Mock-Plan (keine KI)",
+          "durationMin": 45,
+          "variants": [
+            {
+              "location": "home",
+              "equipment": [
+                "kettlebell"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Hyrox-Simulation (verkürzt)",
+                  "type": "main",
+                  "format": "for_time",
+                  "rounds": 1,
+                  "exercises": [
+                    {
+                      "name": "Lauf",
+                      "station": "run",
+                      "distanceM": 1000
+                    },
+                    {
+                      "name": "Kettlebell Swings",
+                      "reps": 40,
+                      "loadKg": 24,
+                      "equipment": [
+                        "kettlebell"
+                      ]
+                    },
+                    {
+                      "name": "Lauf",
+                      "station": "run",
+                      "distanceM": 1000
+                    },
+                    {
+                      "name": "Burpee Broad Jumps",
+                      "station": "burpee_broad_jump",
+                      "distanceM": 80
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2026-11-07",
+          "dayType": "mixed",
+          "title": "Mixed",
+          "intent": "Mock-Plan (keine KI)",
+          "durationMin": 60,
+          "variants": [
+            {
+              "location": "gym",
+              "equipment": [
+                "barbell",
+                "sled",
+                "skierg"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Kraft",
+                  "type": "main",
+                  "format": "straight_sets",
+                  "exercises": [
+                    {
+                      "name": "Kniebeuge",
+                      "sets": 4,
+                      "reps": 6,
+                      "loadKg": 70,
+                      "restSec": 120,
+                      "equipment": [
+                        "barbell"
+                      ]
+                    },
+                    {
+                      "name": "Rumänisches Kreuzheben",
+                      "sets": 3,
+                      "reps": 8,
+                      "loadKg": 60,
+                      "restSec": 120
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "location": "home",
+              "equipment": [
+                "kettlebell"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Kraft",
+                  "type": "main",
+                  "format": "straight_sets",
+                  "exercises": [
+                    {
+                      "name": "Goblet Squat",
+                      "sets": 4,
+                      "reps": 10,
+                      "loadKg": 20,
+                      "restSec": 90,
+                      "equipment": [
+                        "kettlebell"
+                      ]
+                    },
+                    {
+                      "name": "Ausfallschritte",
+                      "sets": 3,
+                      "reps": 12,
+                      "loadKg": 12,
+                      "restSec": 60
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2026-11-08",
+          "dayType": "rest",
+          "title": "Ruhetag",
+          "durationMin": 0,
+          "variants": []
+        }
+      ]
+    },
+    {
+      "weekNumber": 2,
+      "theme": "Woche 2 (Mock)",
+      "days": [
+        {
+          "date": "2026-11-09",
+          "dayType": "strength",
+          "title": "Kraft Unterkörper",
+          "intent": "Mock-Plan (keine KI)",
+          "durationMin": 60,
+          "variants": [
+            {
+              "location": "gym",
+              "equipment": [
+                "barbell",
+                "sled",
+                "skierg"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Kraft",
+                  "type": "main",
+                  "format": "straight_sets",
+                  "exercises": [
+                    {
+                      "name": "Kniebeuge",
+                      "sets": 4,
+                      "reps": 6,
+                      "loadKg": 70,
+                      "restSec": 120,
+                      "equipment": [
+                        "barbell"
+                      ]
+                    },
+                    {
+                      "name": "Rumänisches Kreuzheben",
+                      "sets": 3,
+                      "reps": 8,
+                      "loadKg": 60,
+                      "restSec": 120
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "location": "home",
+              "equipment": [
+                "kettlebell"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Kraft",
+                  "type": "main",
+                  "format": "straight_sets",
+                  "exercises": [
+                    {
+                      "name": "Goblet Squat",
+                      "sets": 4,
+                      "reps": 10,
+                      "loadKg": 20,
+                      "restSec": 90,
+                      "equipment": [
+                        "kettlebell"
+                      ]
+                    },
+                    {
+                      "name": "Ausfallschritte",
+                      "sets": 3,
+                      "reps": 12,
+                      "loadKg": 12,
+                      "restSec": 60
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2026-11-10",
+          "dayType": "rest",
+          "title": "Ruhetag",
+          "durationMin": 0,
+          "variants": []
+        },
+        {
+          "date": "2026-11-11",
+          "dayType": "run",
+          "title": "Laufintervalle",
+          "intent": "Mock-Plan (keine KI)",
+          "durationMin": 60,
+          "variants": [
+            {
+              "location": "gym",
+              "equipment": [
+                "barbell",
+                "sled",
+                "skierg"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Intervalle",
+                  "type": "main",
+                  "format": "intervals",
+                  "exercises": [
+                    {
+                      "name": "1-km-Intervall",
+                      "station": "run",
+                      "sets": 5,
+                      "distanceM": 1000,
+                      "targetPace": "5:15/km",
+                      "restSec": 90,
+                      "rpeTarget": 7
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2026-11-12",
+          "dayType": "rest",
+          "title": "Ruhetag",
+          "durationMin": 0,
+          "variants": []
+        },
+        {
+          "date": "2026-11-13",
+          "dayType": "hyrox_sim",
+          "title": "Hyrox-Simulation",
+          "intent": "Mock-Plan (keine KI)",
+          "durationMin": 45,
+          "variants": [
+            {
+              "location": "home",
+              "equipment": [
+                "kettlebell"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Hyrox-Simulation (verkürzt)",
+                  "type": "main",
+                  "format": "for_time",
+                  "rounds": 1,
+                  "exercises": [
+                    {
+                      "name": "Lauf",
+                      "station": "run",
+                      "distanceM": 1000
+                    },
+                    {
+                      "name": "Kettlebell Swings",
+                      "reps": 40,
+                      "loadKg": 24,
+                      "equipment": [
+                        "kettlebell"
+                      ]
+                    },
+                    {
+                      "name": "Lauf",
+                      "station": "run",
+                      "distanceM": 1000
+                    },
+                    {
+                      "name": "Burpee Broad Jumps",
+                      "station": "burpee_broad_jump",
+                      "distanceM": 80
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2026-11-14",
+          "dayType": "mixed",
+          "title": "Mixed",
+          "intent": "Mock-Plan (keine KI)",
+          "durationMin": 60,
+          "variants": [
+            {
+              "location": "gym",
+              "equipment": [
+                "barbell",
+                "sled",
+                "skierg"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Kraft",
+                  "type": "main",
+                  "format": "straight_sets",
+                  "exercises": [
+                    {
+                      "name": "Kniebeuge",
+                      "sets": 4,
+                      "reps": 6,
+                      "loadKg": 70,
+                      "restSec": 120,
+                      "equipment": [
+                        "barbell"
+                      ]
+                    },
+                    {
+                      "name": "Rumänisches Kreuzheben",
+                      "sets": 3,
+                      "reps": 8,
+                      "loadKg": 60,
+                      "restSec": 120
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "location": "home",
+              "equipment": [
+                "kettlebell"
+              ],
+              "blocks": [
+                {
+                  "name": "Aufwärmen",
+                  "type": "warmup",
+                  "format": "circuit",
+                  "rounds": 2,
+                  "exercises": [
+                    {
+                      "name": "Lockeres Einlaufen oder Rudern",
+                      "durationSec": 300,
+                      "rpeTarget": 3
+                    },
+                    {
+                      "name": "Mobilisation Hüfte/Schulter",
+                      "durationSec": 180
+                    }
+                  ]
+                },
+                {
+                  "name": "Kraft",
+                  "type": "main",
+                  "format": "straight_sets",
+                  "exercises": [
+                    {
+                      "name": "Goblet Squat",
+                      "sets": 4,
+                      "reps": 10,
+                      "loadKg": 20,
+                      "restSec": 90,
+                      "equipment": [
+                        "kettlebell"
+                      ]
+                    },
+                    {
+                      "name": "Ausfallschritte",
+                      "sets": 3,
+                      "reps": 12,
+                      "loadKg": 12,
+                      "restSec": 60
+                    }
+                  ]
+                },
+                {
+                  "name": "Cooldown",
+                  "type": "cooldown",
+                  "exercises": [
+                    {
+                      "name": "Dehnen",
+                      "durationSec": 300
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2026-11-15",
+          "dayType": "rest",
+          "title": "Ruhetag",
+          "durationMin": 0,
+          "variants": []
+        }
+      ]
+    }
+  ]
+}
