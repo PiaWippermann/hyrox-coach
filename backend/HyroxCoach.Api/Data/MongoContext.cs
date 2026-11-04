@@ -12,6 +12,7 @@ public sealed class MongoContext
     public IMongoCollection<PlanDoc> Plans { get; }
     public IMongoCollection<WorkoutLog> Workouts { get; }
     public IMongoCollection<AiUsage> Usage { get; }
+    public IMongoCollection<PlanChat> Chats { get; }
 
     public MongoContext(AppOptions options)
     {
@@ -23,6 +24,7 @@ public sealed class MongoContext
         Plans = db.GetCollection<PlanDoc>("plans");
         Workouts = db.GetCollection<WorkoutLog>("workouts");
         Usage = db.GetCollection<AiUsage>("ai_usage");
+        Chats = db.GetCollection<PlanChat>("plan_chats");
     }
 
     /// <summary>Legt Indizes an. Versucht es mehrfach, weil MongoDB beim Container-Start evtl. noch nicht bereit ist.</summary>

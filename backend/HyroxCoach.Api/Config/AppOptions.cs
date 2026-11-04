@@ -11,7 +11,10 @@ public sealed class AppOptions
     public string AnthropicBaseUrl { get; init; } = "https://api.anthropic.com";
     public int AiMaxCallsPerDay { get; init; } = 4;
     public int AiMaxCallsPerMonth { get; init; } = 8;
-    public int PlanMaxTokens { get; init; } = 16000;
+    public int AiMaxChatPerDay { get; init; } = 40; // Coach-Chat zählt getrennt von der Plan-Erstellung
+    public int PlanMaxTokens { get; init; } = 32000;
+    public string PlanEffort { get; init; } = "medium";
+    public string TimeZone { get; init; } = "Europe/Berlin"; // für „heute“ bei Blockwechsel und Folgeblöcken
 
     public static AppOptions FromEnvironment()
     {
@@ -36,7 +39,10 @@ public sealed class AppOptions
             AnthropicBaseUrl = Get("ANTHROPIC_BASE_URL", "https://api.anthropic.com"),
             AiMaxCallsPerDay = GetInt("AI_MAX_CALLS_PER_DAY", 4),
             AiMaxCallsPerMonth = GetInt("AI_MAX_CALLS_PER_MONTH", 8),
-            PlanMaxTokens = GetInt("PLAN_MAX_TOKENS", 16000),
+            AiMaxChatPerDay = GetInt("AI_MAX_CHAT_PER_DAY", 40),
+            PlanMaxTokens = GetInt("PLAN_MAX_TOKENS", 32000),
+            PlanEffort = Get("PLAN_EFFORT", "medium"),
+            TimeZone = Get("APP_TIME_ZONE", "Europe/Berlin"),
         };
     }
 }

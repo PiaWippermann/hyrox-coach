@@ -18,6 +18,11 @@ var options = AppOptions.FromEnvironment();
 builder.Services.AddSingleton(options);
 builder.Services.AddSingleton<MongoContext>();
 builder.Services.AddScoped<PlanService>();
+builder.Services.AddScoped<PlanChatService>();
+builder.Services.AddScoped<AnamneseExtractor>();
+builder.Services.AddScoped<WorkoutFeedbackService>();
+builder.Services.AddScoped<HealthImportService>();
+builder.Services.AddHostedService<AutoBlockService>();
 builder.Services.AddHttpClient<AnthropicClient>(client =>
 {
     client.BaseAddress = new Uri(options.AnthropicBaseUrl);
@@ -122,6 +127,9 @@ api.MapGet("/anamnese/suggestions", async (HttpContext ctx, MongoContext db) =>
     return Results.Ok(FocusSuggester.Suggest(a, latest));
 });
 
+api.MapPost("/anamnese/extract", async (ExtractRequest req, HttpContext ctx, AnamneseExtractor extractor) =>
+    Results.Ok(await extractor.ExtractAsync(ctx.CurrentUser(), req, ctx.RequestAborted)));
+
 api.MapGet("/results", async (HttpContext ctx, MongoContext db) =>
 {
     var u = ctx.CurrentUser();
@@ -153,27 +161,34 @@ api.MapDelete("/results/{id}", async (string id, HttpContext ctx, MongoContext d
     return res.DeletedCount > 0 ? Results.NoContent() : Results.NotFound();
 });
 
-static object PlanEnvelope(PlanDoc p)
+static Dictionary<string, object?> PlanEnvelope(PlanDoc p)
 {
     using var doc = JsonDocument.Parse(p.PlanJson);
-    return new
+    return new()
     {
-        id = p.Id,
-        createdAt = p.CreatedAt,
-        startDate = p.StartDate,
-        weeks = p.Weeks,
-        kind = p.Kind,
-        status = p.Status,
-        plan = doc.RootElement.Clone()
+        ["id"] = p.Id,
+        ["createdAt"] = p.CreatedAt,
+        ["startDate"] = p.StartDate,
+        ["weeks"] = p.Weeks,
+        ["kind"] = p.Kind,
+        ["status"] = p.Status,
+        ["revision"] = p.Revision,
+        ["plan"] = doc.RootElement.Clone()
     };
 }
 
-api.MapGet("/plans/current", async (HttpContext ctx, MongoContext db) =>
+// Aktiver Plan, dazu ggf. der Folgeblock ("upcoming"), der im Anschluss startet
+api.MapGet("/plans/current", async (HttpContext ctx, MongoContext db, AppOptions opt) =>
 {
     var u = ctx.CurrentUser();
+    await PlanLifecycle.PromoteAsync(db, u.Id, BlockPlanner.Today(opt.TimeZone), ctx.RequestAborted);
     var p = await db.Plans.Find(x => x.UserId == u.Id && x.Status == "active")
         .SortByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
-    return p is null ? Results.NotFound(new { error = "Noch kein Plan." }) : Results.Ok(PlanEnvelope(p));
+    if (p is null) return Results.NotFound(new { error = "Noch kein Plan." });
+    var next = await db.Plans.Find(x => x.UserId == u.Id && x.Status == "upcoming").FirstOrDefaultAsync();
+    var envelope = PlanEnvelope(p);
+    envelope["upcoming"] = next is null ? null : PlanEnvelope(next);
+    return Results.Ok(envelope);
 });
 
 api.MapPost("/plans/generate", async (GeneratePlanRequest req, HttpContext ctx, PlanService plans) =>
@@ -184,17 +199,53 @@ api.MapPost("/plans/generate", async (GeneratePlanRequest req, HttpContext ctx, 
 
 api.MapPost("/plans/adapt", async (AdaptPlanRequest req, HttpContext ctx, PlanService plans) =>
 {
-    var doc = await plans.CreateAsync(ctx.CurrentUser(), "adapted", req.StartDate, req.Weeks, req.Notes, ctx.RequestAborted);
+    var doc = await plans.CreateAsync(ctx.CurrentUser(), "adapted", req.StartDate, req.Weeks, req.Notes, ctx.RequestAborted, req.StartNow);
     return Results.Ok(PlanEnvelope(doc));
 });
+
+api.MapGet("/plans/chat", async (HttpContext ctx, PlanChatService chat) =>
+{
+    var c = await chat.GetAsync(ctx.CurrentUser(), ctx.RequestAborted);
+    return Results.Ok(new { planId = c.PlanId, messages = c.Messages });
+});
+
+api.MapPost("/plans/chat", async (ChatRequest req, HttpContext ctx, PlanChatService chat) =>
+{
+    var res = await chat.SendAsync(ctx.CurrentUser(), req.Message, ctx.RequestAborted);
+    return Results.Ok(new
+    {
+        reply = res.Reply,
+        planChanged = res.PlanChanged,
+        plan = res.PlanChanged ? PlanEnvelope(res.Plan) : null
+    });
+});
+
+api.MapGet("/plans/checkin", async (HttpContext ctx, MongoContext db) =>
+{
+    var u = ctx.CurrentUser();
+    var plan = await db.Plans.Find(p => p.UserId == u.Id && p.Status == "active").SortByDescending(p => p.CreatedAt).FirstOrDefaultAsync();
+    return Results.Ok(new { lastCheckinAt = u.LastCheckinAt, planCreatedAt = plan?.CreatedAt });
+});
+
+api.MapPost("/plans/checkin", async (HttpContext ctx, PlanChatService chat) =>
+{
+    var res = await chat.CheckinAsync(ctx.CurrentUser(), ctx.RequestAborted);
+    return Results.Ok(new { reply = res.Reply, planChanged = res.PlanChanged });
+});
+
+api.MapPost("/workouts/import", async (HealthImportRequest req, HttpContext ctx, HealthImportService import) =>
+    Results.Ok(await import.ImportAsync(ctx.CurrentUser(), req, ctx.RequestAborted)));
+
+api.MapPost("/workouts/{id}/feedback", async (string id, HttpContext ctx, WorkoutFeedbackService feedback) =>
+    Results.Ok(new { feedback = await feedback.CreateAsync(ctx.CurrentUser(), id, ctx.RequestAborted) }));
 
 api.MapPost("/workouts", async (WorkoutLog body, HttpContext ctx, MongoContext db) =>
 {
     var u = ctx.CurrentUser();
     if (!DateOnly.TryParseExact(body.Date, "yyyy-MM-dd", out _))
         throw new ApiException(400, "date muss das Format yyyy-MM-dd haben.");
-    if (body.Location != "gym" && body.Location != "home")
-        throw new ApiException(400, "location muss gym oder home sein.");
+    if (body.Location != "gym" && body.Location != "home" && body.Location != "other")
+        throw new ApiException(400, "location muss gym, home oder other sein.");
     if (body.Rpe is < 1 or > 10)
         throw new ApiException(400, "rpe muss zwischen 1 und 10 liegen.");
 
@@ -220,6 +271,13 @@ api.MapGet("/workouts", async (
     return Results.Ok(list);
 });
 
+api.MapDelete("/workouts/{id}", async (string id, HttpContext ctx, MongoContext db) =>
+{
+    var u = ctx.CurrentUser();
+    var res = await db.Workouts.DeleteOneAsync(w => w.Id == id && w.UserId == u.Id);
+    return res.DeletedCount > 0 ? Results.NoContent() : Results.NotFound();
+});
+
 api.MapGet("/progress", async (HttpContext ctx, MongoContext db) =>
 {
     var u = ctx.CurrentUser();
@@ -235,7 +293,9 @@ api.MapGet("/usage", async (HttpContext ctx, MongoContext db, AppOptions opt) =>
     var rows = await db.Usage.Find(x => x.UserId == u.Id && x.At >= monthStart).ToListAsync();
     return Results.Ok(new
     {
-        callsThisMonth = rows.Count,
+        callsThisMonth = rows.Count(r => r.Kind is "initial" or "adapted"),
+        chatToday = rows.Count(r => r.Kind is "chat" or "extract" or "feedback" && r.At >= now.Date),
+        chatDailyLimit = opt.AiMaxChatPerDay,
         monthlyLimit = opt.AiMaxCallsPerMonth,
         dailyLimit = opt.AiMaxCallsPerDay,
         inputTokens = rows.Sum(r => (long)r.InputTokens),

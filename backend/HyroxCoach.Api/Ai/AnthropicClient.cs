@@ -8,6 +8,9 @@ namespace HyroxCoach.Api.Ai;
 
 public sealed record AiResult(JsonElement ToolInput, int InputTokens, int OutputTokens, string StopReason);
 
+/// <summary>Antwort eines freien Aufrufs: Text und optional ein Tool-Aufruf.</summary>
+public sealed record AiReply(string Text, string? ToolName, JsonElement? ToolInput, int InputTokens, int OutputTokens, string StopReason);
+
 /// <summary>
 /// Minimaler Client für die Claude Messages API (reines HTTP, ohne SDK).
 /// Das Ergebnis wird über einen erzwungenen Tool-Aufruf geliefert, dessen input_schema unser Plan-Schema ist.
@@ -32,6 +35,38 @@ public sealed class AnthropicClient
         int maxTokens,
         CancellationToken ct)
     {
+        var messages = new JsonArray(new JsonObject
+        {
+            ["role"] = "user",
+            ["content"] = userMessage
+        });
+        var tools = new JsonArray(new JsonObject
+        {
+            ["name"] = toolName,
+            ["description"] = toolDescription,
+            ["input_schema"] = inputSchema.DeepClone()
+        });
+
+        var reply = await CallAsync(system, messages, tools, maxTokens, ct);
+        if (reply.ToolName == toolName && reply.ToolInput is { } input)
+            return new AiResult(input, reply.InputTokens, reply.OutputTokens, reply.StopReason);
+
+        // Abgeschnitten, bevor der Tool-Aufruf fertig war: PlanService erkennt das am StopReason und versucht es erneut.
+        if (reply.StopReason == "max_tokens")
+            return new AiResult(default, reply.InputTokens, reply.OutputTokens, reply.StopReason);
+
+        throw new ApiException(502, "Die KI-Antwort enthielt keinen Plan (kein Tool-Aufruf).");
+    }
+
+    /// <summary>Freier Aufruf mit Verlauf. Das Modell darf antworten oder eines der Tools aufrufen.</summary>
+    public async Task<AiReply> CallAsync(
+        string system,
+        JsonArray messages,
+        JsonArray tools,
+        int maxTokens,
+        CancellationToken ct,
+        string? effort = null)
+    {
         if (string.IsNullOrWhiteSpace(_options.AnthropicApiKey))
             throw new ApiException(503, "ANTHROPIC_API_KEY ist im Backend nicht gesetzt.");
 
@@ -39,24 +74,21 @@ public sealed class AnthropicClient
         {
             ["model"] = _options.AnthropicModel,
             ["max_tokens"] = maxTokens,
+            // Denkaufwand begrenzen: Thinking-Tokens zählen in max_tokens.
+            ["output_config"] = new JsonObject
+            {
+                ["effort"] = effort ?? _options.PlanEffort
+            },
             ["system"] = system,
-            ["messages"] = new JsonArray(new JsonObject
-            {
-                ["role"] = "user",
-                ["content"] = userMessage
-            }),
-            ["tools"] = new JsonArray(new JsonObject
-            {
-                ["name"] = toolName,
-                ["description"] = toolDescription,
-                ["input_schema"] = inputSchema.DeepClone()
-            }),
-            ["tool_choice"] = new JsonObject
-            {
-                ["type"] = "tool",
-                ["name"] = toolName
-            }
+            ["messages"] = messages
         };
+        if (tools.Count > 0)
+        {
+            body["tools"] = tools;
+            // Neuere Modelle (z. B. claude-sonnet-5-5) lehnen erzwungenes tool_choice ("tool"/"any") ab.
+            // Der System-Prompt weist an, wann das Tool aufzurufen ist.
+            body["tool_choice"] = new JsonObject { ["type"] = "auto" };
+        }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/v1/messages")
         {
@@ -86,19 +118,26 @@ public sealed class AnthropicClient
             if (usage.TryGetProperty("output_tokens", out var ot)) outputTokens = ot.GetInt32();
         }
 
+        var replyText = new StringBuilder();
+        string? toolName = null;
+        JsonElement? toolInput = null;
         if (root.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
         {
             foreach (var item in content.EnumerateArray())
             {
                 var type = item.TryGetProperty("type", out var t) ? t.GetString() : null;
-                var name = item.TryGetProperty("name", out var n) ? n.GetString() : null;
-                if (type == "tool_use" && name == toolName && item.TryGetProperty("input", out var input))
+                if (type == "text" && item.TryGetProperty("text", out var tx))
                 {
-                    return new AiResult(input.Clone(), inputTokens, outputTokens, stopReason);
+                    replyText.Append(tx.GetString());
+                }
+                else if (type == "tool_use" && toolName is null && item.TryGetProperty("input", out var input))
+                {
+                    toolName = item.TryGetProperty("name", out var n) ? n.GetString() : null;
+                    toolInput = input.Clone();
                 }
             }
         }
 
-        throw new ApiException(502, "Die KI-Antwort enthielt keinen Plan (kein Tool-Aufruf).");
+        return new AiReply(replyText.ToString().Trim(), toolName, toolInput, inputTokens, outputTokens, stopReason);
     }
 }

@@ -24,22 +24,52 @@ public sealed class PlanService
         _options = options;
     }
 
-    private static JsonNode LoadSchema()
+    internal static JsonNode LoadSchema()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "contracts", "plan.schema.json");
         return JsonNode.Parse(File.ReadAllText(path))!;
     }
 
+    /// <summary>
+    /// Erstellt einen Block. Ohne [startDate]/[weeks] bestimmt BlockPlanner beides: Folgeblock direkt im Anschluss an den
+    /// aktiven Plan, Erstplan ab dem nächsten Montag, [startNow] ab dem Montag dieser Woche (ersetzt den aktiven Plan).
+    /// Liegt der Start in der Zukunft und gibt es einen aktiven Plan, wird der Block als „upcoming“ gespeichert.
+    /// </summary>
     public async Task<PlanDoc> CreateAsync(
-        User user, string kind, string startDate, int weeks, string? userNotes, CancellationToken ct)
+        User user, string kind, string? startDate, int? weeks, string? userNotes, CancellationToken ct, bool startNow = false)
     {
-        if (weeks < 2 || weeks > 4)
-            throw new ApiException(400, "weeks muss zwischen 2 und 4 liegen.");
-        if (!DateOnly.TryParseExact(startDate, "yyyy-MM-dd", out _))
-            throw new ApiException(400, "startDate muss das Format yyyy-MM-dd haben.");
-
         var anamnese = await _db.Anamneses.Find(a => a.UserId == user.Id).FirstOrDefaultAsync(ct)
                        ?? throw new ApiException(400, "Bitte zuerst die Anamnese ausfüllen.");
+        var active = await _db.Plans.Find(p => p.UserId == user.Id && p.Status == "active")
+            .SortByDescending(p => p.CreatedAt).FirstOrDefaultAsync(ct);
+        var today = BlockPlanner.Today(_options.TimeZone);
+
+        DateOnly start;
+        if (startDate is not null)
+        {
+            if (!DateOnly.TryParseExact(startDate, "yyyy-MM-dd", out start))
+                throw new ApiException(400, "startDate muss das Format yyyy-MM-dd haben.");
+        }
+        else if (startNow)
+        {
+            start = BlockPlanner.MondayOf(today);
+        }
+        else if (kind == "adapted" && active is not null)
+        {
+            // Folgeblock: nahtlos im Anschluss an den aktiven Block
+            start = DateOnly.ParseExact(active.StartDate, "yyyy-MM-dd").AddDays(active.Weeks * 7);
+        }
+        else
+        {
+            // Neuer Plan (z. B. nach der Anamnese): ab nächstem Montag; ein laufender Plan gilt bis dahin weiter
+            start = BlockPlanner.NextMonday(today);
+        }
+        var blockWeeks = weeks ?? BlockPlanner.Weeks(start, BlockPlanner.Peak(anamnese, start));
+        if (blockWeeks < 2 || blockWeeks > 4)
+            throw new ApiException(400, "weeks muss zwischen 2 und 4 liegen.");
+        startDate = start.ToString("yyyy-MM-dd");
+        // Startet der Block später, bleibt der aktive Plan bis dahin gültig; PlanLifecycle schaltet am Starttag um
+        var upcoming = active is not null && start > today && !startNow;
 
         var latestResult = await _db.Results.Find(r => r.UserId == user.Id)
             .SortByDescending(r => r.Date).FirstOrDefaultAsync(ct);
@@ -59,9 +89,10 @@ public sealed class PlanService
             var logs = await _db.Workouts.Find(filter).ToListAsync(ct);
             adaptation = AdaptationSummary.Build(previous.PlanJson, logs, startDate);
         }
+        var weeksCount = blockWeeks;
 
         var userMessage = PlanPrompts.BuildUserMessage(
-            startDate, weeks, kind, anamnese, latestResult, previous, adaptation, userNotes);
+            startDate, weeksCount, kind, anamnese, latestResult, previous, adaptation, userNotes);
 
         string? lastError = null;
         for (var attempt = 0; attempt < 2; attempt++)
@@ -91,23 +122,25 @@ public sealed class PlanService
                 continue;
             }
 
-            var error = PlanValidator.Validate(result.ToolInput, startDate, weeks);
+            var error = PlanValidator.Validate(result.ToolInput, startDate, weeksCount, PlanValidator.RaceDays(anamnese));
             if (error is not null)
             {
                 lastError = error;
                 continue;
             }
 
+            // Ein vorhandener Folgeblock wird immer ersetzt; der aktive Plan nur, wenn der neue sofort gilt
             await _db.Plans.UpdateManyAsync(
-                p => p.UserId == user.Id && p.Status == "active",
+                p => p.UserId == user.Id && (p.Status == "upcoming" || (!upcoming && p.Status == "active")),
                 Builders<PlanDoc>.Update.Set(p => p.Status, "archived"),
                 cancellationToken: ct);
 
             var doc = new PlanDoc
             {
                 UserId = user.Id,
+                Status = upcoming ? "upcoming" : "active",
                 StartDate = startDate,
-                Weeks = weeks,
+                Weeks = weeksCount,
                 Kind = kind,
                 PlanJson = result.ToolInput.GetRawText(),
                 Model = _options.AnthropicModel
@@ -125,11 +158,12 @@ public sealed class PlanService
         var dayStart = now.Date;
         var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var today = await _db.Usage.CountDocumentsAsync(u => u.UserId == userId && u.At >= dayStart, cancellationToken: ct);
+        // Coach-Chat hat ein eigenes Limit (PlanChatService)
+        var today = await _db.Usage.CountDocumentsAsync(u => u.UserId == userId && u.Kind != "chat" && u.Kind != "extract" && u.Kind != "feedback" && u.At >= dayStart, cancellationToken: ct);
         if (today >= _options.AiMaxCallsPerDay)
             throw new ApiException(429, $"Tageslimit für KI-Aufrufe erreicht ({_options.AiMaxCallsPerDay}).");
 
-        var month = await _db.Usage.CountDocumentsAsync(u => u.UserId == userId && u.At >= monthStart, cancellationToken: ct);
+        var month = await _db.Usage.CountDocumentsAsync(u => u.UserId == userId && u.Kind != "chat" && u.Kind != "extract" && u.Kind != "feedback" && u.At >= monthStart, cancellationToken: ct);
         if (month >= _options.AiMaxCallsPerMonth)
             throw new ApiException(429, $"Monatslimit für KI-Aufrufe erreicht ({_options.AiMaxCallsPerMonth}).");
     }

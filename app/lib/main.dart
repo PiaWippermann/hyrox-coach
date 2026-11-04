@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'state/app_state.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(
@@ -21,12 +23,12 @@ class HyroxApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hyrox Coach',
-      theme: ThemeData(colorSchemeSeed: Colors.deepOrange, useMaterial3: true),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.deepOrange,
-        useMaterial3: true,
-        brightness: Brightness.dark,
-      ),
+      // Deutsch: Kalender beginnen montags, Monats-/Wochentagsnamen und 24-Stunden-Uhrzeit
+      locale: const Locale('de', 'DE'),
+      supportedLocales: const [Locale('de', 'DE')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
       home: const _Root(),
     );
   }

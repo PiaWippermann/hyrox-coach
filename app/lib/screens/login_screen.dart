@@ -1,9 +1,12 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_client.dart';
 import '../state/app_state.dart';
+import '../widgets/logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,7 +16,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _url = TextEditingController(text: 'http://10.0.2.2:8080');
+  final _url = TextEditingController(
+      text: Platform.isAndroid ? 'http://10.0.2.2:8080' : 'http://localhost:8080');
   final _name = TextEditingController();
   final _code = TextEditingController();
   bool _busy = false;
@@ -62,7 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Hyrox Coach', style: Theme.of(context).textTheme.headlineLarge),
+                  const Align(alignment: Alignment.centerLeft, child: LogoMark(size: 72)),
+                  const SizedBox(height: 16),
+                  Text('Hyrox Coach',
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
                   const Text('Melde dich mit deinem Namen und dem Einladungscode an.'),
                   const SizedBox(height: 24),

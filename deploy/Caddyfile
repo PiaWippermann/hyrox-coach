@@ -1,0 +1,12 @@
+# Caddy holt das HTTPS-Zertifikat für die Domain automatisch (Let's Encrypt).
+{$DOMAIN} {
+	encode gzip
+
+	# Plan-Erstellung dauert mehrere Minuten: Caddy hat standardmäßig kein Antwort-Timeout,
+	# wir setzen trotzdem eine klare Obergrenze knapp über dem Anthropic-Timeout (8 min).
+	reverse_proxy api:8080 {
+		transport http {
+			response_header_timeout 10m
+		}
+	}
+}

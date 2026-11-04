@@ -13,8 +13,10 @@ public sealed class User
     public string NameKey { get; set; } = "";
     public string TokenHash { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? LastCheckinAt { get; set; }    // letzter Zwei-Wochen-Check-in mit dem Coach
 }
 
+[BsonIgnoreExtraElements]
 public sealed class ProfileInfo
 {
     public int? Age { get; set; }
@@ -23,9 +25,26 @@ public sealed class ProfileInfo
     public string? Sex { get; set; }
 }
 
+[BsonIgnoreExtraElements]
+public sealed class RaceInfo
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Name { get; set; } = "";         // z. B. HYROX Hamburg
+    public string Date { get; set; } = "";         // yyyy-MM-dd
+    public string Priority { get; set; } = "A";    // A = Hauptrennen (Peak), B = wichtig, C = Trainingsrennen
+    public string Category { get; set; } = "single";
+    public string? Division { get; set; }
+    public string? TargetTime { get; set; }
+}
+
+[BsonIgnoreExtraElements]
 public sealed class GoalInfo
 {
-    public string? RaceDate { get; set; }          // yyyy-MM-dd
+    // race = konkrete Rennen; horizon = kein Rennen, aber Form bis HorizonDate aufbauen; open = einfach fit für Hyrox werden
+    public string Mode { get; set; } = "open";
+    public List<RaceInfo> Races { get; set; } = new();
+    public string? HorizonDate { get; set; }       // yyyy-MM-dd, Peak-Zeitpunkt ohne konkretes Rennen
+    public string? RaceDate { get; set; }          // veraltet: altes Einzelrennen, wird in Races übernommen
     public string Category { get; set; } = "single"; // single | doubles | relay
     public string? Division { get; set; }          // z. B. Open, Pro, Altersklasse
     public string? TargetTime { get; set; }        // z. B. 1:25:00
@@ -33,6 +52,7 @@ public sealed class GoalInfo
     public string? PartnerName { get; set; }
 }
 
+[BsonIgnoreExtraElements]
 public sealed class SelfAssessment
 {
     public double? RunWeeklyKm { get; set; }
@@ -44,22 +64,44 @@ public sealed class SelfAssessment
     // burpee_broad_jump, rowing, farmers_carry, sandbag_lunges, wall_balls; Wert 1-5
     public Dictionary<string, int> Ratings { get; set; } = new();
     public string? Limiter { get; set; } // Freitext: wo geht im Rennen die Luft aus?
+    // Arbeitsgewicht für ca. 5 saubere Wiederholungen in kg. Schlüssel: back_squat, deadlift, bench_press,
+    // overhead_press, barbell_row, dumbbell (je Hand, z. B. Ausfallschritte), kettlebell_swing, wall_ball
+    public Dictionary<string, double> WorkingWeights { get; set; } = new();
 }
 
+[BsonIgnoreExtraElements]
 public sealed class DayPreference
 {
     public int Weekday { get; set; }            // 1 = Montag ... 7 = Sonntag
     public string Mode { get; set; } = "ask";   // gym | home | ask (erst am Tag entscheiden)
     public int MaxDurationMin { get; set; } = 60;
+    public string? Focus { get; set; }          // feste Vorgabe, z. B. "Oberkörper Push" oder "Intervalle"
 }
 
+/// <summary>Fester Termin wie ein Yoga- oder Hyrox-Kurs. Wird nicht geplant, sondern nur im Kalender abgehakt.</summary>
+[BsonIgnoreExtraElements]
+public sealed class FixedSession
+{
+    public int Weekday { get; set; }            // 1 = Montag ... 7 = Sonntag
+    public string Time { get; set; } = "";      // HH:mm
+    public string Title { get; set; } = "";
+    public string DayType { get; set; } = "recovery"; // gleiche Werte wie dayType im Plan
+    public int DurationMin { get; set; } = 60;
+    public string? Notes { get; set; }
+}
+
+[BsonIgnoreExtraElements]
 public sealed class ScheduleInfo
 {
+    // auto = so oft wie sinnvoll (KI wählt Anzahl), count = feste Anzahl DaysPerWeek, fixed = genau an den Tagen in Days
+    public string FrequencyMode { get; set; } = "count";
     public int DaysPerWeek { get; set; } = 4;
     public List<DayPreference> Days { get; set; } = new(); // nur Trainingstage
+    public List<FixedSession> FixedSessions { get; set; } = new();
     public string? OtherSports { get; set; }
 }
 
+[BsonIgnoreExtraElements]
 public sealed class EquipmentInfo
 {
     public List<string> Home { get; set; } = new();
@@ -104,10 +146,28 @@ public sealed class PlanDoc
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string StartDate { get; set; } = "";
     public int Weeks { get; set; }
-    public string Status { get; set; } = "active"; // active | archived
+    public string Status { get; set; } = "active"; // active | upcoming (Folgeblock, startet später) | archived
     public string Kind { get; set; } = "initial";  // initial | adapted
     public string PlanJson { get; set; } = "{}";   // validierter Plan laut contracts/plan.schema.json
     public string Model { get; set; } = "";
+    public int Revision { get; set; }              // zählt Änderungen über den Coach-Chat
+    public DateTime? UpdatedAt { get; set; }
+}
+
+public sealed class ChatMessage
+{
+    public string Role { get; set; } = "user";     // user | assistant
+    public string Text { get; set; } = "";
+    public DateTime At { get; set; } = DateTime.UtcNow;
+    public List<string> ChangedDates { get; set; } = new(); // nur bei assistant: geänderte Plantage
+}
+
+[BsonIgnoreExtraElements]
+public sealed class PlanChat
+{
+    [BsonId] public string PlanId { get; set; } = "";
+    public string UserId { get; set; } = "";
+    public List<ChatMessage> Messages { get; set; } = new();
 }
 
 public sealed class LoggedSet
@@ -122,6 +182,7 @@ public sealed class LoggedExercise
 {
     public string Name { get; set; } = "";
     public string? Station { get; set; }
+    public bool Benchmark { get; set; }         // Leistungstest (z. B. 1000 m SkiErg auf Zeit)
     public bool Skipped { get; set; }
     public List<LoggedSet> Sets { get; set; } = new();
 }
@@ -134,7 +195,17 @@ public sealed class WorkoutLog
     public string Date { get; set; } = "";          // yyyy-MM-dd
     public string? PlanId { get; set; }
     public string? DayTitle { get; set; }
-    public string Location { get; set; } = "gym";   // gym | home
+    public string Location { get; set; } = "gym";   // gym | home | other (fester Termin)
+    public string? DayType { get; set; }            // Art der Einheit, z. B. run, strength, recovery
+    public bool Fixed { get; set; }                 // abgehakter fester Termin (Kurs), keine Übungen
+    public string? Feedback { get; set; }           // kurzes Coach-Feedback nach dem Training
+    // Daten aus Apple Health / Health Connect (Watch)
+    public string Source { get; set; } = "app";     // app | health
+    public string? ExternalId { get; set; }         // UUID des Health-Workouts, verhindert doppelten Import
+    public int? AvgHr { get; set; }
+    public int? MaxHr { get; set; }
+    public int? Calories { get; set; }
+    public double? DistanceM { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
     public int? DurationMin { get; set; }
@@ -158,8 +229,10 @@ public sealed class AiUsage
 // Request-Typen
 public sealed record CreateUserRequest(string Name);
 public sealed record LoginRequest(string Name, string Code);
-public sealed record GeneratePlanRequest(string StartDate, int Weeks);
-public sealed record AdaptPlanRequest(string StartDate, int Weeks, string? Notes);
+// Start und Länge sind optional: ohne Angabe bestimmt BlockPlanner sie aus dem Ziel.
+public sealed record GeneratePlanRequest(string? StartDate, int? Weeks);
+public sealed record AdaptPlanRequest(string? StartDate, int? Weeks, string? Notes, bool StartNow = false);
+public sealed record ChatRequest(string Message);
 
 public sealed class ApiException : Exception
 {

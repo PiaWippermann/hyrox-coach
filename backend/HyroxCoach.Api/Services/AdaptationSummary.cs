@@ -32,9 +32,10 @@ public static class AdaptationSummary
             }
         }
 
-        var logDates = logs.Select(l => l.Date).ToHashSet();
-        var completed = plannedDays.Count(p => logDates.Contains(p.Date));
-        var missed = plannedDays.Where(p => !logDates.Contains(p.Date)).Select(p => $"{p.Date} {p.Title}").ToList();
+        // Erledigt = Training mit gleichem Datum und Titel; abgehakte feste Termine (Kurse) zählen nicht als Planeinheit
+        var done = logs.Where(l => !l.Fixed).Select(l => (l.Date, l.DayTitle ?? "")).ToHashSet();
+        var completed = plannedDays.Count(p => done.Contains((p.Date, p.Title)));
+        var missed = plannedDays.Where(p => !done.Contains((p.Date, p.Title))).Select(p => $"{p.Date} {p.Title}").ToList();
 
         var rpes = logs.Where(l => l.Rpe.HasValue).Select(l => l.Rpe!.Value).ToList();
 

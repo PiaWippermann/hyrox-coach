@@ -12,7 +12,18 @@ public static class PlanValidator
 {
     private static readonly HashSet<string> Locations = new() { "gym", "home" };
 
-    public static string? Validate(JsonElement plan, string startDate, int weeks)
+    /// <summary>Renntage aus der Anamnese (Datum → Name), inklusive altem Einzel-Renndatum.</summary>
+    public static Dictionary<string, string> RaceDays(Domain.Anamnese? anamnese)
+    {
+        var days = new Dictionary<string, string>();
+        if (anamnese is null) return days;
+        foreach (var r in anamnese.Goal.Races) days[r.Date] = string.IsNullOrWhiteSpace(r.Name) ? "Rennen" : r.Name;
+        if (anamnese.Goal.Races.Count == 0 && !string.IsNullOrEmpty(anamnese.Goal.RaceDate)) days[anamnese.Goal.RaceDate] = "Rennen";
+        return days;
+    }
+
+    /// <param name="raceDays">Rennen aus der Anamnese; liegt eines im Planzeitraum, muss der Tag dayType "race" haben.</param>
+    public static string? Validate(JsonElement plan, string startDate, int weeks, IReadOnlyDictionary<string, string>? raceDays = null)
     {
         if (!DateOnly.TryParseExact(startDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var start))
             return "startDate ist ungültig.";
@@ -50,9 +61,12 @@ public static class PlanValidator
                     errors.Add($"Tag {dayIndex}: Datum muss {expected} sein (war {date ?? "leer"}).");
 
                 var type = day.TryGetProperty("dayType", out var dt) ? dt.GetString() : null;
+                if (date is not null && raceDays is not null && raceDays.TryGetValue(date, out var raceName) && type != "race")
+                    errors.Add($"Am {date} ist das Rennen \"{raceName}\": dieser Tag muss dayType \"race\" sein " +
+                               "(variants leer), und Vortag/Folgetage müssen dazu passen.");
                 var hasVariants = day.TryGetProperty("variants", out var variants) && variants.ValueKind == JsonValueKind.Array;
 
-                if (type == "rest")
+                if (type == "rest" || type == "race")
                     continue;
 
                 if (!hasVariants || variants.GetArrayLength() == 0)
